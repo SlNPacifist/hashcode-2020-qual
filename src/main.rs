@@ -1,8 +1,8 @@
-use quicli::prelude::*;
 use structopt::StructOpt;
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 use std::str::FromStr;
+use std::collections::{HashSet, HashMap};
 
 #[derive(Debug, StructOpt)]
 struct Cli {
@@ -16,9 +16,21 @@ struct Library {
     books: Vec<usize>,
 }
 
+fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) {
+    let hs = &scores.iter().collect::<HashSet<_>>();
+    assert_eq!(hs.len(), 1);
+    assert!(&libraries.iter().all(|l| l.books.len() == 1000));
+    let acc = &libraries.iter().flat_map(|l| &l.books).fold(HashMap::new(), |mut acc, book| {
+        *acc.entry(book).or_insert(0) += 1;
+        acc
+    });
+    assert_eq!(*acc.values().max().unwrap(), 1);
+    println!("All ok")
+}
+
 fn main() {
     let Cli { file } = Cli::from_args();
-    let mut lines = BufReader::new(File::open(file)
+    let mut lines = BufReader::new(File::open(&file)
         .expect("Could not open file"))
         .lines()
         .map(|s| s.expect("Could not read string"));
@@ -52,7 +64,7 @@ fn main() {
             }
         })
         .collect::<Vec<_>>();
-    println!("{}, {}, {}", b, l, d);
-    println!("{:?}", libraries);
-    println!("{:?}", scores);
+    if file.starts_with("data/b") {
+        solve_b(&scores, &libraries, d);
+    }
 }
