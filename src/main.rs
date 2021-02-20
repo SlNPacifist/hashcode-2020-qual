@@ -16,7 +16,18 @@ struct Library {
     books: Vec<usize>,
 }
 
-fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) {
+#[derive(Debug)]
+struct LibraryScanOrder {
+    id: usize,
+    books: Vec<usize>,
+}
+
+#[derive(Debug)]
+struct Solution {
+    libs: Vec<LibraryScanOrder>,
+}
+
+fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Solution {
     let hs = &scores.iter().collect::<HashSet<_>>();
     assert_eq!(hs.len(), 1);
     assert!(&libraries.iter().all(|l| l.books.len() == 1000));
@@ -26,7 +37,15 @@ fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) {
         acc
     });
     assert_eq!(*acc.values().max().unwrap(), 1);
-    println!("All ok")
+
+    let mut order = (0..libraries.len()).collect::<Vec<_>>();
+    order.sort_by_key(|&i| libraries[i].signup);
+    Solution {
+        libs: order.iter().map(|&i| LibraryScanOrder {
+            id: i,
+            books: libraries[i].books.clone(),
+        }).collect::<Vec<_>>()
+    }
 }
 
 fn main() {
@@ -65,7 +84,16 @@ fn main() {
             }
         })
         .collect::<Vec<_>>();
-    if file.starts_with("data/b") {
-        solve_b(&scores, &libraries, d);
+
+    let solution = if file.starts_with("data/b") {
+        solve_b(&scores, &libraries, d)
+    } else {
+        panic!("How to solve this?");
+    };
+
+    println!("{}", solution.libs.len());
+    for lib in solution.libs {
+        println!("{} {}", lib.id, lib.books.len());
+        println!("{}", lib.books.iter().map(usize::to_string).collect::<Vec<_>>().join(" "));
     }
 }
