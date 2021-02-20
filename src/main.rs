@@ -4,6 +4,7 @@ use std::io::{BufReader, BufRead};
 use std::str::FromStr;
 use std::collections::{HashSet, HashMap};
 use ordered_float::OrderedFloat;
+use rayon::prelude::*;
 
 #[derive(Debug, StructOpt)]
 struct Cli {
