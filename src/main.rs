@@ -118,6 +118,52 @@ fn solve_c(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Soluti
     }
 }
 
+// TODO buggy
+fn solve_greedy(problem: &Problem) -> Solution {
+    let mut used_books: HashSet<BookId> = HashSet::new();
+    let mut used_libraries: HashSet<usize> = HashSet::new();
+    let mut days_left = problem.days;
+    let mut score_total = 0;
+
+    let calc_score = |lib: &Library, days_left: usize, used_books: &HashSet<BookId>| {
+        let mut available_books = lib.books.iter()
+            .filter(|b| !used_books.contains(b))
+            .copied()
+            .collect::<Vec<_>>();
+        available_books.sort_by(|a, b| Ord::cmp(&problem.scores[a.0], &problem.scores[b.0]).reverse());
+        let scanning_days_left = days_left.saturating_sub(lib.signup);
+        let scannable_books_count = (lib.concurrency * scanning_days_left).min(available_books.len());
+        available_books[0..scannable_books_count]
+            .iter()
+            .map(|&b| problem.scores[b.0])
+            .sum::<usize>()
+    };
+
+    while let Some((lib_id, lib)) = problem.libraries.iter().enumerate()
+        .filter(|(i, lib)| !used_libraries.contains(i) && lib.signup + 1 <= days_left)
+        .max_by_key(|(_, lib)| calc_score(lib, days_left, &used_books) ) {
+
+        println!("Days left {}", days_left);
+        let score_added = calc_score(lib, days_left, &used_books);
+        score_total += score_added;
+        println!("Score total {}, added {}", score_total, score_added);
+
+        used_libraries.insert(lib_id);
+        for &book in &lib.books {
+            used_books.insert(book);
+        }
+        days_left -= lib.signup;
+    }
+
+    println!("Used {} books", used_books.len());
+    Solution {
+        libs: used_libraries.iter().map(|&id| LibraryScanOrder {
+            id,
+            books: problem.libraries[id].books.clone(),
+        }).collect()
+    }
+}
+
 fn main() {
     let Cli { file } = Cli::from_args();
     let mut lines = BufReader::new(File::open(&file)
@@ -162,11 +208,12 @@ fn main() {
     };
 
     let solution = if file.starts_with("data/b") {
-        solve_b(&scores, &libraries, d)
+        // solve_b(&problem.scores, &problem.libraries, problem.days)
+        solve_greedy(&problem)
     } else if file.starts_with("data/c") {
         solve_c(&scores, &libraries, d)
     } else {
-        panic!("How to solve this?");
+        solve_greedy(&problem)
     };
 
     println!("Score {}", calc_score(&problem, &solution));
