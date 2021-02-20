@@ -68,13 +68,17 @@ fn calc_score(problem: &Problem, solution: &Solution) -> usize {
             } else {
                 let lib_input = &problem.libraries[lib.id];
                 *signup_start_day += lib_input.signup;
-                Some((*signup_start_day, lib_input.concurrency, lib.books.clone()))
+                Some((*signup_start_day, lib_input.concurrency, lib.books.clone(), &lib_input.books))
             }
         })
-        .flat_map(|(start_day, concurrency, books)| {
+        .flat_map(|(start_day, concurrency, solution_books, input_books)| {
             let days_left = problem.days.saturating_sub(start_day);
-            let total_books_scanned = (days_left * concurrency).min(books.len());
-            books[0..total_books_scanned].to_vec()
+            let max_scanned_books = input_books.len().min(days_left * concurrency);
+            let total_books_scanned = (max_scanned_books).min(solution_books.len());
+
+            println!("Slots left: {}", max_scanned_books - total_books_scanned);
+
+            solution_books[0..total_books_scanned].to_vec()
         })
         .collect::<HashSet<_>>()
         .iter()
@@ -121,8 +125,8 @@ fn solve_c(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Soluti
 
 // TODO buggy
 fn solve_greedy(problem: &Problem) -> Solution {
-    // const use_norm: bool = true;
-    const use_norm: bool = false;
+    const use_norm: bool = true;
+    // const use_norm: bool = false;
 
     let mut used_books: HashSet<BookId> = HashSet::new();
     let mut used_libraries: HashSet<usize> = HashSet::new();
