@@ -213,7 +213,7 @@ fn main() {
         // solve_b(&problem.scores, &problem.libraries, problem.days)
         solve_greedy(&problem)
     } else if file.starts_with("data/c") {
-        solve_c(&scores, &libraries, d)
+        solve_c(&problem.scores, &problem.libraries, problem.days)
     } else {
         solve_greedy(&problem)
     };
