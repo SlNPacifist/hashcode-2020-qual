@@ -38,8 +38,9 @@ struct Problem {
     days: usize,
 }
 
-fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, _days: usize) -> Solution {
-    let hs = &scores.iter().collect::<HashSet<_>>();
+fn solve_b(problem: &Problem) -> Solution {
+    let Problem { scores, libraries, .. } = problem;
+    let hs = scores.iter().collect::<HashSet<_>>();
     assert_eq!(hs.len(), 1);
     assert!(&libraries.iter().all(|l| l.books.len() == 1000));
     assert!(&libraries.iter().all(|l| l.concurrency == 1));
@@ -86,11 +87,12 @@ fn calc_score(problem: &Problem, solution: &Solution) -> usize {
         .sum()
 }
 
-fn solve_c(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Solution {
+fn solve_c(problem: &Problem) -> Solution {
+    let Problem { scores, libraries, days } = problem;
     assert!(&libraries.iter().all(|l| l.books.len() <= l.concurrency));
     let mut used_books: HashSet<BookId> = HashSet::new();
     let mut used_libraries: HashSet<usize> = HashSet::new();
-    let mut days_left = days;
+    let mut days_left = *days;
     let mut score_total = 0;
 
     let calc_score = |lib: &Library, used_books: &HashSet<BookId>| lib.books.iter()
@@ -235,10 +237,10 @@ fn main() {
     };
 
     let solution = if file.starts_with("data/b") {
-        // solve_b(&problem.scores, &problem.libraries, problem.days)
+        // solve_b(&problem)
         solve_greedy(&problem)
     } else if file.starts_with("data/c") {
-        solve_c(&problem.scores, &problem.libraries, problem.days)
+        solve_c(&problem)
     } else {
         solve_greedy(&problem)
     };
