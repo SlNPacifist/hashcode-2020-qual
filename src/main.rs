@@ -28,6 +28,12 @@ struct Solution {
     libs: Vec<LibraryScanOrder>,
 }
 
+struct Problem {
+    scores: Vec<usize>,
+    libraries: Vec<Library>,
+    days: usize,
+}
+
 fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, _days: usize) -> Solution {
     let hs = &scores.iter().collect::<HashSet<_>>();
     assert_eq!(hs.len(), 1);
@@ -47,6 +53,35 @@ fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, _days: usize) -> Solut
             books: libraries[i].books.clone(),
         }).collect::<Vec<_>>()
     }
+}
+
+// TODO validate
+fn calc_score(problem: Problem, solution: Solution) -> usize {
+    solution.libs
+        .iter()
+        .scan(0usize, |mut signup_start_day, lib| {
+            if *signup_start_day >= problem.days {
+                None
+            } else {
+                let lib_input = &problem.libraries[lib.id];
+                let lib_start_day = *signup_start_day;
+                *signup_start_day += lib_input.signup;
+                Some((lib_start_day, lib_input.concurrency, lib.books.clone()))
+            }
+        })
+        .flat_map(|(start_day, concurrency, books)| {
+            let days_left = problem.days - start_day;
+            let total_books_scanned = days_left * concurrency;
+            books[0..total_books_scanned].to_vec()
+        })
+        .fold((0usize, HashSet::<usize>::new()), |(mut score, mut used_books), book| {
+            if ! used_books.contains(&book) {
+                score += problem.scores[book];
+                used_books.insert(book);
+            }
+            (score, used_books)
+        })
+        .0
 }
 
 fn solve_c(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Solution {
