@@ -152,7 +152,7 @@ fn solve_greedy(problem: &Problem) -> Solution {
         calc_books_score(&calc_for_lib(lib, days_left, used_books))
     };
 
-    while let Some((lib_id, lib)) = problem.libraries.iter().enumerate()
+    while let Some((lib_id, lib)) = problem.libraries.par_iter().enumerate()
         .filter(|(i, lib)| !used_libraries.contains(i) && lib.signup + 1 <= days_left)
         .max_by_key(|(_, lib)| {
             if use_norm {
