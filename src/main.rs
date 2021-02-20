@@ -25,6 +25,7 @@ struct Library {
 struct LibraryScanOrder {
     id: usize,
     books: Vec<BookId>,
+    books_left: Vec<BookId>,
     max_scanned_books: usize,
 }
 
@@ -50,6 +51,7 @@ impl Solution {
                 LibraryScanOrder {
                     id: i,
                     books: lib.books.clone(),
+                    books_left: vec!(),
                     max_scanned_books: lib.books.len().min(days_left * lib.concurrency)
                 }
             }).collect::<Vec<_>>()
@@ -134,6 +136,12 @@ fn solve_c(problem: &Problem) -> Solution {
     Solution::from_order(problem, &used_libraries.iter().copied().collect())
 }
 
+// fn fill_holes(problem: &Problem, solution: &mut Solution) {
+//     fn best_lib = solution.libs.par_iter().enumerate().max_by_key(|(id, lib): (usize, &Library)| {
+//         let org_books =
+//     })
+// }
+
 // TODO buggy
 fn solve_greedy(problem: &Problem) -> Solution {
     const use_norm: bool = true;
@@ -146,14 +154,19 @@ fn solve_greedy(problem: &Problem) -> Solution {
     let mut score_total = 0;
 
     let calc_for_lib = |lib: &Library, days_left: usize, used_books: &HashSet<BookId>| {
-        let available_books = lib.books.iter()
-            .filter(|b| !used_books.contains(b))
-            .copied()
-            .collect::<Vec<_>>();
         let scanning_days_left = days_left.saturating_sub(lib.signup);
-        let scannable_books_count = (lib.concurrency * scanning_days_left).min(available_books.len());
+        let mut books_taken = 0;
+        let books_max = lib.concurrency * scanning_days_left;
 
-        available_books[0..scannable_books_count].to_vec()
+        lib.books.iter().copied()
+            .partition::<Vec<_>, _>(|b| {
+                if used_books.contains(b) || books_taken == books_max {
+                    false
+                } else {
+                    books_taken += 1;
+                    true
+                }
+            })
     };
 
     let calc_books_score = |books: &Vec<BookId>| {
@@ -164,7 +177,7 @@ fn solve_greedy(problem: &Problem) -> Solution {
     };
 
     let calc_score = |lib: &Library, days_left: usize, used_books: &HashSet<BookId>| {
-        calc_books_score(&calc_for_lib(lib, days_left, used_books))
+        calc_books_score(&calc_for_lib(lib, days_left, used_books).0)
     };
 
     while let Some((lib_id, lib)) = problem.libraries.par_iter().enumerate()
@@ -178,22 +191,23 @@ fn solve_greedy(problem: &Problem) -> Solution {
         } ) {
 
         println!("Days left {}", days_left);
-        let books_for_lib = calc_for_lib(lib, days_left, &used_books);
+        let (books_for_lib, books_left) = calc_for_lib(lib, days_left, &used_books);
         let score_added = calc_books_score(&books_for_lib);
         score_total += score_added;
         println!("Score total {}, added {}", score_total, score_added);
-
-        used_libraries.insert(lib_id);
-        solution_part.push(LibraryScanOrder {
-            id: lib_id,
-            books: books_for_lib.clone(),
-            max_scanned_books: lib.books.len().min(days_left * lib.concurrency)
-        });
 
         for &book in &books_for_lib {
             used_books.insert(book);
         }
         days_left -= lib.signup;
+
+        used_libraries.insert(lib_id);
+        solution_part.push(LibraryScanOrder {
+            id: lib_id,
+            books: books_for_lib,
+            books_left,
+            max_scanned_books: lib.books.len().min(days_left * lib.concurrency)
+        });
     }
 
     println!("Used {} books", used_books.len());
