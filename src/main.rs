@@ -146,11 +146,10 @@ fn solve_greedy(problem: &Problem) -> Solution {
     let mut score_total = 0;
 
     let calc_for_lib = |lib: &Library, days_left: usize, used_books: &HashSet<BookId>| {
-        let mut available_books = lib.books.iter()
+        let available_books = lib.books.iter()
             .filter(|b| !used_books.contains(b))
             .copied()
             .collect::<Vec<_>>();
-        available_books.sort_by(|a, b| Ord::cmp(&problem.scores[a.0], &problem.scores[b.0]).reverse());
         let scanning_days_left = days_left.saturating_sub(lib.signup);
         let scannable_books_count = (lib.concurrency * scanning_days_left).min(available_books.len());
 
@@ -231,7 +230,13 @@ fn main() {
                 let nums = s[0].split(" ").map(|s| usize::from_str_radix(s, 10).expect("Could not parse number")).collect::<Vec<_>>();
                 (nums[0], nums[1], nums[2])
             };
-            let books = s[1].split(" ").take(books_amount).map(usize::from_str).map(|s| s.unwrap()).map(|b| BookId(b)).collect::<Vec<_>>();
+            let mut books = s[1].split(" ")
+                .take(books_amount)
+                .map(usize::from_str)
+                .map(|s| s.unwrap())
+                .map(|b| BookId(b))
+                .collect::<Vec<_>>();
+            books.sort_by_key(|b| usize::max_value() - scores[b.0]);
             Library {
                 signup,
                 concurrency,
