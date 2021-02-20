@@ -10,17 +10,20 @@ struct Cli {
     file: String,
 }
 
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
+struct BookId(usize);
+
 #[derive(Debug)]
 struct Library {
     signup: usize,
     concurrency: usize,
-    books: Vec<usize>,
+    books: Vec<BookId>,
 }
 
 #[derive(Debug)]
 struct LibraryScanOrder {
     id: usize,
-    books: Vec<usize>,
+    books: Vec<BookId>,
 }
 
 #[derive(Debug)]
@@ -55,7 +58,7 @@ fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, _days: usize) -> Solut
     }
 }
 
-fn calc_score(problem: Problem, solution: Solution) -> usize {
+fn calc_score(problem: &Problem, solution: &Solution) -> usize {
     solution.libs
         .iter()
         .scan(0usize, |signup_start_day, lib| {
@@ -74,20 +77,20 @@ fn calc_score(problem: Problem, solution: Solution) -> usize {
         })
         .collect::<HashSet<_>>()
         .iter()
-        .map(|&b| problem.scores[b])
+        .map(|&b| problem.scores[b.0])
         .sum()
 }
 
 fn solve_c(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Solution {
     assert!(&libraries.iter().all(|l| l.books.len() <= l.concurrency));
-    let mut used_books: HashSet<usize> = HashSet::new();
+    let mut used_books: HashSet<BookId> = HashSet::new();
     let mut used_libraries: HashSet<usize> = HashSet::new();
     let mut days_left = days;
     let mut score_total = 0;
 
-    let calc_score = |lib: &Library, used_books: &HashSet<usize>| lib.books.iter()
+    let calc_score = |lib: &Library, used_books: &HashSet<BookId>| lib.books.iter()
         .filter(|b| !used_books.contains(b))
-        .map(|&b| scores[b])
+        .map(|&b| scores[b.0])
         .sum::<usize>();
 
     while let Some((lib_id, lib)) = libraries.iter().enumerate()
@@ -121,7 +124,7 @@ fn main() {
         .expect("Could not open file"))
         .lines()
         .map(|s| s.expect("Could not read string"));
-    let (b, l, d) = {
+    let (b, l, days) = {
         let items = lines.next()
             .expect("what?")
             .split(" ")
@@ -143,7 +146,7 @@ fn main() {
                 let nums = s[0].split(" ").map(|s| usize::from_str_radix(s, 10).expect("Could not parse number")).collect::<Vec<_>>();
                 (nums[0], nums[1], nums[2])
             };
-            let books = s[1].split(" ").take(books_amount).map(usize::from_str).map(|s| s.unwrap()).collect::<Vec<_>>();
+            let books = s[1].split(" ").take(books_amount).map(usize::from_str).map(|s| s.unwrap()).map(|b| BookId(b)).collect::<Vec<_>>();
             Library {
                 signup,
                 concurrency,
@@ -151,6 +154,12 @@ fn main() {
             }
         })
         .collect::<Vec<_>>();
+
+    let problem = Problem {
+        scores,
+        libraries,
+        days,
+    };
 
     let solution = if file.starts_with("data/b") {
         solve_b(&scores, &libraries, d)
@@ -160,7 +169,7 @@ fn main() {
         panic!("How to solve this?");
     };
 
-    println!("Score {}", calc_score(Problem { scores, libraries, days: d }, solution));
+    println!("Score {}", calc_score(&problem, &solution));
     // println!("{}", solution.libs.len());
     // for lib in solution.libs {
     //     println!("{} {}", lib.id, lib.books.len());
