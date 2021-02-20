@@ -25,6 +25,7 @@ struct Library {
 struct LibraryScanOrder {
     id: usize,
     books: Vec<BookId>,
+    max_scanned_books: usize,
 }
 
 #[derive(Debug)]
@@ -36,6 +37,24 @@ struct Problem {
     scores: Vec<usize>,
     libraries: Vec<Library>,
     days: usize,
+}
+
+impl Solution {
+    fn from_order(problem: &Problem, order: &Vec<usize>) -> Self {
+        let Problem { libraries, days, .. } = problem;
+        let mut days_left = *days;
+        Solution {
+            libs: order.iter().map(|&i| {
+                let lib = &libraries[i];
+                days_left -= lib.signup;
+                LibraryScanOrder {
+                    id: i,
+                    books: lib.books.clone(),
+                    max_scanned_books: lib.books.len().min(days_left * lib.concurrency)
+                }
+            }).collect::<Vec<_>>()
+        }
+    }
 }
 
 fn solve_b(problem: &Problem) -> Solution {
@@ -52,12 +71,7 @@ fn solve_b(problem: &Problem) -> Solution {
 
     let mut order = (0..libraries.len()).collect::<Vec<_>>();
     order.sort_by_key(|&i| libraries[i].signup);
-    Solution {
-        libs: order.iter().map(|&i| LibraryScanOrder {
-            id: i,
-            books: libraries[i].books.clone(),
-        }).collect::<Vec<_>>()
-    }
+    Solution::from_order(problem, &order)
 }
 
 fn calc_score(problem: &Problem, solution: &Solution) -> usize {
@@ -117,12 +131,7 @@ fn solve_c(problem: &Problem) -> Solution {
     }
 
     println!("Used {} books", used_books.len());
-    Solution {
-        libs: used_libraries.iter().map(|&id| LibraryScanOrder {
-            id,
-            books: libraries[id].books.clone(),
-        }).collect()
-    }
+    Solution::from_order(problem, &used_libraries.iter().copied().collect())
 }
 
 // TODO buggy
@@ -179,6 +188,7 @@ fn solve_greedy(problem: &Problem) -> Solution {
         solution_part.push(LibraryScanOrder {
             id: lib_id,
             books: books_for_lib.clone(),
+            max_scanned_books: lib.books.len().min(days_left * lib.concurrency)
         });
 
         for &book in &books_for_lib {
