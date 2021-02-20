@@ -54,23 +54,27 @@ fn solve_c(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Soluti
     let mut used_books: HashSet<usize> = HashSet::new();
     let mut used_libraries: HashSet<usize> = HashSet::new();
     let mut days_left = days;
+    let mut score_total = 0;
 
     let calc_score = |lib: &Library, used_books: &HashSet<usize>| lib.books.iter()
         .filter(|b| !used_books.contains(b))
         .map(|&b| scores[b])
-        .sum::<usize>() as f64 / (lib.signup as f64 + 1.0f64);
+        .sum::<usize>();
 
     while let Some((lib_id, lib)) = libraries.iter().enumerate()
             .filter(|(i, lib)| !used_libraries.contains(i) && lib.signup + 1 <= days_left)
-            .max_by_key(|(_, lib)| OrderedFloat(calc_score(lib, &used_books))) {
+            .max_by_key(|(_, lib)| OrderedFloat(calc_score(lib, &used_books) as f64 / ((lib.signup + 1) as f64))) {
+
+        println!("Days left {}", days_left);
+        let score_added = calc_score(lib, &used_books);
+        score_total += score_added;
+        println!("Score total {}, added {}", score_total, score_added);
 
         used_libraries.insert(lib_id);
         for &book in &lib.books {
             used_books.insert(book);
         }
         days_left -= lib.signup;
-        println!("Days left {}", days_left);
-        println!("Score added {}", calc_score(lib, &used_books));
     }
 
     println!("Used {} books", used_books.len());
