@@ -20,6 +20,7 @@ fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) {
     let hs = &scores.iter().collect::<HashSet<_>>();
     assert_eq!(hs.len(), 1);
     assert!(&libraries.iter().all(|l| l.books.len() == 1000));
+    assert!(&libraries.iter().all(|l| l.concurrency == 1));
     let acc = &libraries.iter().flat_map(|l| &l.books).fold(HashMap::new(), |mut acc, book| {
         *acc.entry(book).or_insert(0) += 1;
         acc
