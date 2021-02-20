@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::{BufReader, BufRead};
 use std::str::FromStr;
 use std::collections::{HashSet, HashMap};
+use ordered_float::OrderedFloat;
 
 #[derive(Debug, StructOpt)]
 struct Cli {
@@ -27,7 +28,7 @@ struct Solution {
     libs: Vec<LibraryScanOrder>,
 }
 
-fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Solution {
+fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, _days: usize) -> Solution {
     let hs = &scores.iter().collect::<HashSet<_>>();
     assert_eq!(hs.len(), 1);
     assert!(&libraries.iter().all(|l| l.books.len() == 1000));
@@ -45,6 +46,39 @@ fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Soluti
             id: i,
             books: libraries[i].books.clone(),
         }).collect::<Vec<_>>()
+    }
+}
+
+fn solve_c(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Solution {
+    assert!(&libraries.iter().all(|l| l.books.len() <= l.concurrency));
+    let mut used_books: HashSet<usize> = HashSet::new();
+    let mut used_libraries: HashSet<usize> = HashSet::new();
+    let mut days_left = days;
+
+    let calc_score = |lib: &Library, used_books: &HashSet<usize>| lib.books.iter()
+        .filter(|b| !used_books.contains(b))
+        .map(|&b| scores[b])
+        .sum::<usize>() as f64 / (lib.signup as f64 + 1.0f64);
+
+    while let Some((lib_id, lib)) = libraries.iter().enumerate()
+            .filter(|(i, lib)| !used_libraries.contains(i) && lib.signup + 1 <= days_left)
+            .max_by_key(|(_, lib)| OrderedFloat(calc_score(lib, &used_books))) {
+
+        used_libraries.insert(lib_id);
+        for &book in &lib.books {
+            used_books.insert(book);
+        }
+        days_left -= lib.signup;
+        println!("Days left {}", days_left);
+        println!("Score added {}", calc_score(lib, &used_books));
+    }
+
+    println!("Used {} books", used_books.len());
+    Solution {
+        libs: used_libraries.iter().map(|&id| LibraryScanOrder {
+            id,
+            books: libraries[id].books.clone(),
+        }).collect()
     }
 }
 
@@ -87,6 +121,8 @@ fn main() {
 
     let solution = if file.starts_with("data/b") {
         solve_b(&scores, &libraries, d)
+    } else if file.starts_with("data/c") {
+        solve_c(&scores, &libraries, d)
     } else {
         panic!("How to solve this?");
     };
