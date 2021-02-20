@@ -55,33 +55,27 @@ fn solve_b(scores: &Vec<usize>, libraries: &Vec<Library>, _days: usize) -> Solut
     }
 }
 
-// TODO validate
 fn calc_score(problem: Problem, solution: Solution) -> usize {
     solution.libs
         .iter()
-        .scan(0usize, |mut signup_start_day, lib| {
+        .scan(0usize, |signup_start_day, lib| {
             if *signup_start_day >= problem.days {
                 None
             } else {
                 let lib_input = &problem.libraries[lib.id];
-                let lib_start_day = *signup_start_day;
                 *signup_start_day += lib_input.signup;
-                Some((lib_start_day, lib_input.concurrency, lib.books.clone()))
+                Some((*signup_start_day, lib_input.concurrency, lib.books.clone()))
             }
         })
         .flat_map(|(start_day, concurrency, books)| {
-            let days_left = problem.days - start_day;
-            let total_books_scanned = days_left * concurrency;
+            let days_left = problem.days.saturating_sub(start_day);
+            let total_books_scanned = (days_left * concurrency).min(books.len());
             books[0..total_books_scanned].to_vec()
         })
-        .fold((0usize, HashSet::<usize>::new()), |(mut score, mut used_books), book| {
-            if ! used_books.contains(&book) {
-                score += problem.scores[book];
-                used_books.insert(book);
-            }
-            (score, used_books)
-        })
-        .0
+        .collect::<HashSet<_>>()
+        .iter()
+        .map(|&b| problem.scores[b])
+        .sum()
 }
 
 fn solve_c(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Solution {
@@ -166,9 +160,10 @@ fn main() {
         panic!("How to solve this?");
     };
 
-    println!("{}", solution.libs.len());
-    for lib in solution.libs {
-        println!("{} {}", lib.id, lib.books.len());
-        println!("{}", lib.books.iter().map(usize::to_string).collect::<Vec<_>>().join(" "));
-    }
+    println!("Score {}", calc_score(Problem { scores, libraries, days: d }, solution));
+    // println!("{}", solution.libs.len());
+    // for lib in solution.libs {
+    //     println!("{} {}", lib.id, lib.books.len());
+    //     println!("{}", lib.books.iter().map(usize::to_string).collect::<Vec<_>>().join(" "));
+    // }
 }
