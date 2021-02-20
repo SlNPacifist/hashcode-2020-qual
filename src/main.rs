@@ -120,6 +120,9 @@ fn solve_c(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Soluti
 
 // TODO buggy
 fn solve_greedy(problem: &Problem) -> Solution {
+    // const use_norm: bool = true;
+    const use_norm: bool = false;
+
     let mut used_books: HashSet<BookId> = HashSet::new();
     let mut used_libraries: HashSet<usize> = HashSet::new();
     let mut solution_libraries: Vec<usize> = vec![];
@@ -142,7 +145,13 @@ fn solve_greedy(problem: &Problem) -> Solution {
 
     while let Some((lib_id, lib)) = problem.libraries.iter().enumerate()
         .filter(|(i, lib)| !used_libraries.contains(i) && lib.signup + 1 <= days_left)
-        .max_by_key(|(_, lib)| calc_score(lib, days_left, &used_books) ) {
+        .max_by_key(|(_, lib)| {
+            if use_norm {
+                OrderedFloat(calc_score(lib, days_left, &used_books) as f64 / (lib.signup as f64))
+            } else {
+                OrderedFloat(calc_score(lib, days_left, &used_books) as f64)
+            }
+        } ) {
 
         println!("Days left {}", days_left);
         let score_added = calc_score(lib, days_left, &used_books);
