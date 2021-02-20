@@ -122,6 +122,7 @@ fn solve_c(scores: &Vec<usize>, libraries: &Vec<Library>, days: usize) -> Soluti
 fn solve_greedy(problem: &Problem) -> Solution {
     let mut used_books: HashSet<BookId> = HashSet::new();
     let mut used_libraries: HashSet<usize> = HashSet::new();
+    let mut solution_libraries: Vec<usize> = vec![];
     let mut days_left = problem.days;
     let mut score_total = 0;
 
@@ -149,6 +150,7 @@ fn solve_greedy(problem: &Problem) -> Solution {
         println!("Score total {}, added {}", score_total, score_added);
 
         used_libraries.insert(lib_id);
+        solution_libraries.push(lib_id);
         for &book in &lib.books {
             used_books.insert(book);
         }
@@ -157,7 +159,7 @@ fn solve_greedy(problem: &Problem) -> Solution {
 
     println!("Used {} books", used_books.len());
     Solution {
-        libs: used_libraries.iter().map(|&id| LibraryScanOrder {
+        libs: solution_libraries.iter().map(|&id| LibraryScanOrder {
             id,
             books: problem.libraries[id].books.clone(),
         }).collect()
