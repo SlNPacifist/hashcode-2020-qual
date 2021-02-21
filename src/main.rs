@@ -151,7 +151,7 @@ fn swap_book(solution: &mut Solution, book: BookId, from: usize, to: usize) {
     swap_book_usage(book, &mut lib_to.books_left, &mut lib_to.books);
 }
 
-fn fill_holes(problem: &Problem, solution: &mut Solution) {
+fn optimize_solution(problem: &Problem, solution: &mut Solution) {
     let mut libs_by_book_used = HashMap::<BookId, usize>::new();
     let mut books_taken = HashSet::new();
     for (pos, lib) in solution.libs.iter().enumerate() {
@@ -161,7 +161,7 @@ fn fill_holes(problem: &Problem, solution: &mut Solution) {
         }
     }
 
-    while let Some((book_to_swap, current_lib_pos, lib_with_empty_slot_pos, book_to_take)) = {solution
+    while let Some((book_to_swap, current_lib_pos, lib_with_empty_slot_pos, book_to_take)) = solution
         .libs.iter().enumerate()
         .filter(|(_, lib)| lib.max_scanned_books > lib.books.len())
         .flat_map(|(lib_with_empty_slot_pos, lib_with_empty_slot)| {
@@ -176,7 +176,7 @@ fn fill_holes(problem: &Problem, solution: &mut Solution) {
                 })
                 .collect::<Vec<_>>()
         })
-        .next()} {
+        .next() {
 
         swap_book(solution, book_to_swap, current_lib_pos, lib_with_empty_slot_pos);
         let current_lib = &mut solution.libs[current_lib_pos];
@@ -322,7 +322,7 @@ fn main() {
 
     println!("Score {}", calc_score(&problem, &solution));
 
-    fill_holes(&problem, &mut solution);
+    optimize_solution(&problem, &mut solution);
 
     println!("Score {}", calc_score(&problem, &solution));
     // println!("{}", solution.libs.len());
