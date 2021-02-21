@@ -119,7 +119,7 @@ impl Solution {
             } {
 
             let score_delta = problem.scores[book_to_take.0] - self.libs[lib_with_empty_slot_pos].empty_slot_cost(problem);
-            if score_delta <= 0 {
+            if use_max && score_delta <= 0 {
                 break
             }
 
