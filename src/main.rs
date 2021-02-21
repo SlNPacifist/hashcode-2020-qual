@@ -85,11 +85,11 @@ fn calc_score(problem: &Problem, solution: &Solution) -> usize {
             } else {
                 let lib_input = &problem.libraries[lib.id];
                 *signup_start_day += lib_input.signup;
-                // TODO: check books used were present in original data
                 Some((*signup_start_day, lib_input.concurrency, lib.books.clone(), &lib_input.books))
             }
         })
         .flat_map(|(start_day, concurrency, solution_books, input_books)| {
+            assert!(solution_books.iter().all(|b| input_books.contains(b)));
             let days_left = problem.days.saturating_sub(start_day);
             let max_scanned_books = input_books.len().min(days_left * concurrency);
             let total_books_scanned = (max_scanned_books).min(solution_books.len());
