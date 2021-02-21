@@ -162,7 +162,7 @@ fn optimize_solution(problem: &Problem, solution: &mut Solution) {
     }
 
     while let Some((book_to_swap, current_lib_pos, lib_with_empty_slot_pos, book_to_take)) = solution
-        .libs.iter().enumerate()
+        .libs.par_iter().enumerate()
         .flat_map(|(lib_with_empty_slot_pos, lib_with_empty_slot)| {
             let empty_slot_cost = if lib_with_empty_slot.max_scanned_books > lib_with_empty_slot.books.len() {
                 0
@@ -182,7 +182,7 @@ fn optimize_solution(problem: &Problem, solution: &mut Solution) {
                 })
                 .collect::<Vec<_>>()
         })
-        .next() {
+        .find_first(|_| true) {
 
         let lib_with_empty_slot = &mut solution.libs[lib_with_empty_slot_pos];
         if lib_with_empty_slot.max_scanned_books == lib_with_empty_slot.books.len() {
