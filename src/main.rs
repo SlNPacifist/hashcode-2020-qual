@@ -147,7 +147,7 @@ impl Solution {
             self.libs_by_book_used.insert(book_to_take, current_lib_pos);
             self.books_taken.insert(book_to_take);
             self.score += score_delta;
-            println!("Added {} score by using book {:?}, replacing {:?}", score_delta, book_to_take, replaced_book);
+            // println!("Added {} score by using book {:?}, replacing {:?}", score_delta, book_to_take, replaced_book);
         }
     }
 }
