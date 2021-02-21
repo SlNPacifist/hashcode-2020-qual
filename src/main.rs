@@ -204,7 +204,6 @@ fn optimize_solution(problem: &Problem, solution: &mut Solution) {
     }
 }
 
-// TODO buggy
 fn solve_greedy(problem: &Problem) -> Solution {
     const use_norm: bool = true;
     // const use_norm: bool = false;
