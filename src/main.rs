@@ -161,16 +161,6 @@ fn fill_holes(problem: &Problem, solution: &mut Solution) {
         }
     }
 
-    // let mut libs_by_book_left = HashMap::new();
-    // for (pos, lib) in solution.libs.iter().enumerate() {
-    //     for book in &lib.books_left {
-    //         libs_by_book_left.entry(book).or_insert(HashSet::new()).insert(pos);
-    //     }
-    // }
-
-    // L1 [C -> 16], [E -> 8]
-    // L2 [A -> 17, B -> 15, empty] [C -> 16, D -> 13]
-
     while let Some((book_to_swap, current_lib_pos, lib_with_empty_slot_pos, book_to_take)) = {solution
         .libs.iter().enumerate()
         .filter(|(_, lib)| lib.max_scanned_books > lib.books.len())
@@ -196,18 +186,6 @@ fn fill_holes(problem: &Problem, solution: &mut Solution) {
         books_taken.insert(book_to_take);
         println!("Added {} score by using new book {:?}", problem.scores[book_to_take.0], book_to_take);
     }
-    // while let Some((lib_with_empty_pos, lib)) = solution.libs.iter().enumerate()
-    //     .find(|(pos, lib)| lib.max_scanned_books > lib.books.len())
-    // {
-    //     lib.books_left.iter().find(|&book| {
-    //         solution.libs[using_lib_pos].books_left.iter().find(|book| !books_taken.contains(book))
-    //     })
-    //     for book in &lib.books_left {
-    //         let using_lib_pos = libs_by_book_used[&book];
-    //         if let Some(&new_book) = solution.libs[using_lib_pos].books_left.iter().find(|book| !books_taken.contains(book)) {
-    //         }
-    //     }
-    // }
 }
 
 // TODO buggy
