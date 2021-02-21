@@ -163,14 +163,21 @@ fn optimize_solution(problem: &Problem, solution: &mut Solution) {
 
     while let Some((book_to_swap, current_lib_pos, lib_with_empty_slot_pos, book_to_take)) = solution
         .libs.iter().enumerate()
-        .filter(|(_, lib)| lib.max_scanned_books > lib.books.len())
+        // .filter(|(_, lib)| lib.max_scanned_books > lib.books.len())
         .flat_map(|(lib_with_empty_slot_pos, lib_with_empty_slot)| {
+            let empty_slot_cost = if lib_with_empty_slot.max_scanned_books > lib_with_empty_slot.books.len() {
+                0
+            } else {
+                problem.scores[lib_with_empty_slot.books.last().unwrap().0]
+            };
             lib_with_empty_slot.books_left.iter()
                 .filter_map(|&book_to_swap| {
                     libs_by_book_used.get(&book_to_swap)
                         .and_then(|&current_lib_pos| {
                             solution.libs[current_lib_pos].books_left.iter()
+                                // books are ordered by their score, so take first one
                                 .find(|book_to_take| !books_taken.contains(book_to_take))
+                                .filter(|book_to_take| problem.scores[book_to_take.0] > empty_slot_cost)
                                 .map(|&book_to_take| (book_to_swap, current_lib_pos, lib_with_empty_slot_pos, book_to_take))
                         })
                 })
@@ -178,10 +185,19 @@ fn optimize_solution(problem: &Problem, solution: &mut Solution) {
         })
         .next() {
 
+        let lib_with_empty_slot = &mut solution.libs[lib_with_empty_slot_pos];
+        if lib_with_empty_slot.max_scanned_books == lib_with_empty_slot.books.len() {
+            let last_book = *lib_with_empty_slot.books.last().unwrap();
+            swap_book_usage(last_book, &mut lib_with_empty_slot.books, &mut lib_with_empty_slot.books_left);
+            libs_by_book_used.remove(&last_book);
+            books_taken.remove(&last_book);
+        }
+
         swap_book(solution, book_to_swap, current_lib_pos, lib_with_empty_slot_pos);
         let current_lib = &mut solution.libs[current_lib_pos];
-        swap_book_usage(book_to_take, &mut current_lib.books_left, &mut current_lib.books);
         libs_by_book_used.insert(book_to_swap, lib_with_empty_slot_pos);
+
+        swap_book_usage(book_to_take, &mut current_lib.books_left, &mut current_lib.books);
         libs_by_book_used.insert(book_to_take, current_lib_pos);
         books_taken.insert(book_to_take);
         println!("Added {} score by using new book {:?}", problem.scores[book_to_take.0], book_to_take);
