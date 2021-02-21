@@ -163,7 +163,6 @@ fn optimize_solution(problem: &Problem, solution: &mut Solution) {
 
     while let Some((book_to_swap, current_lib_pos, lib_with_empty_slot_pos, book_to_take)) = solution
         .libs.iter().enumerate()
-        // .filter(|(_, lib)| lib.max_scanned_books > lib.books.len())
         .flat_map(|(lib_with_empty_slot_pos, lib_with_empty_slot)| {
             let empty_slot_cost = if lib_with_empty_slot.max_scanned_books > lib_with_empty_slot.books.len() {
                 0
