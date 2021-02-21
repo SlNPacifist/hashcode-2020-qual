@@ -94,11 +94,6 @@ impl Solution {
         while let Some((book_to_swap, current_lib_pos, lib_with_empty_slot_pos, book_to_take)) = self
             .libs.par_iter().enumerate()
             .flat_map(|(lib_with_empty_slot_pos, lib_with_empty_slot)| {
-                let empty_slot_cost = if lib_with_empty_slot.max_scanned_books > lib_with_empty_slot.books.len() {
-                    0
-                } else {
-                    problem.scores[lib_with_empty_slot.books.last().unwrap().0]
-                };
                 lib_with_empty_slot.books_left.iter()
                     .filter_map(|&book_to_swap| {
                         self.libs_by_book_used.get(&book_to_swap)
@@ -106,7 +101,7 @@ impl Solution {
                                 self.libs[current_lib_pos].books_left.iter()
                                     // books are ordered by their score, so take first one
                                     .find(|book_to_take| !self.books_taken.contains(book_to_take))
-                                    .filter(|book_to_take| problem.scores[book_to_take.0] > empty_slot_cost)
+                                    .filter(|book_to_take| problem.scores[book_to_take.0] > lib_with_empty_slot.empty_slot_cost(problem))
                                     .map(|&book_to_take| (book_to_swap, current_lib_pos, lib_with_empty_slot_pos, book_to_take))
                             })
                     })
@@ -130,6 +125,16 @@ impl Solution {
             self.libs_by_book_used.insert(book_to_take, current_lib_pos);
             self.books_taken.insert(book_to_take);
             println!("Added {} score by using new book {:?}", problem.scores[book_to_take.0], book_to_take);
+        }
+    }
+}
+
+impl LibraryScanOrder {
+    fn empty_slot_cost(&self, problem: &Problem) -> usize {
+        if self.max_scanned_books > self.books.len() {
+            0
+        } else {
+            problem.scores[self.books.last().unwrap().0]
         }
     }
 }
