@@ -126,7 +126,7 @@ impl Solution {
                 break
             }
 
-            let replaced_book = {
+            let _replaced_book = {
                 let lib_with_empty_slot = &mut self.libs[lib_with_empty_slot_pos];
                 if lib_with_empty_slot.max_scanned_books == lib_with_empty_slot.books.len() {
                     let last_book = *lib_with_empty_slot.books.last().unwrap();
