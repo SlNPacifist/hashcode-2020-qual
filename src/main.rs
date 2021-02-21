@@ -34,6 +34,7 @@ struct Solution {
     libs: Vec<LibraryScanOrder>,
     libs_by_book_used: HashMap<BookId, usize>,
     books_taken: HashSet<BookId>,
+    score: usize,
 }
 
 struct Problem {
@@ -56,10 +57,10 @@ impl Solution {
                 max_scanned_books: lib.books.len().min(days_left * lib.concurrency)
             }
         }).collect::<Vec<_>>();
-        Self::from_libs(libs)
+        Self::from_libs(problem, libs)
     }
 
-    fn from_libs(libs: Vec<LibraryScanOrder>) -> Self {
+    fn from_libs(problem: &Problem, libs: Vec<LibraryScanOrder>) -> Self {
         let mut libs_by_book_used = HashMap::<BookId, usize>::new();
         let mut books_taken = HashSet::new();
         for (pos, lib) in libs.iter().enumerate() {
@@ -68,11 +69,13 @@ impl Solution {
                 books_taken.insert(book);
             }
         }
+        let score = books_taken.iter().map(|book| problem.scores[book.0]).sum();
 
         Self {
             libs,
             libs_by_book_used,
-            books_taken
+            books_taken,
+            score,
         }
     }
 
@@ -143,6 +146,7 @@ impl Solution {
             Self::swap_book_usage(problem, book_to_take, &mut current_lib.books_left, &mut current_lib.books);
             self.libs_by_book_used.insert(book_to_take, current_lib_pos);
             self.books_taken.insert(book_to_take);
+            self.score += score_delta;
             println!("Added {} score by using book {:?}, replacing {:?}", score_delta, book_to_take, replaced_book);
         }
     }
@@ -304,7 +308,7 @@ fn solve_greedy(problem: &Problem) -> Solution {
     }
 
     println!("Used {} books", used_books.len());
-    Solution::from_libs(solution_part)
+    Solution::from_libs(problem, solution_part)
 }
 
 fn main() {
@@ -365,11 +369,11 @@ fn main() {
         solve_greedy(&problem)
     };
 
-    println!("Score {}", calc_score(&problem, &solution));
+    println!("Score {}={}", calc_score(&problem, &solution), solution.score);
 
     solution.optimize(&problem);
 
-    println!("Score {}", calc_score(&problem, &solution));
+    println!("Score {}={}", calc_score(&problem, &solution), solution.score);
     // println!("{}", solution.libs.len());
     // for lib in solution.libs {
     //     println!("{} {}", lib.id, lib.books.len());
