@@ -32,6 +32,8 @@ struct LibraryScanOrder {
 #[derive(Debug)]
 struct Solution {
     libs: Vec<LibraryScanOrder>,
+    libs_by_book_used: HashMap<BookId, usize>,
+    books_taken: HashSet<BookId>,
 }
 
 struct Problem {
@@ -44,17 +46,33 @@ impl Solution {
     fn from_order(problem: &Problem, order: &Vec<usize>) -> Self {
         let Problem { libraries, days, .. } = problem;
         let mut days_left = *days;
-        Solution {
-            libs: order.iter().map(|&i| {
-                let lib = &libraries[i];
-                days_left -= lib.signup;
-                LibraryScanOrder {
-                    id: i,
-                    books: lib.books.clone(),
-                    books_left: vec!(),
-                    max_scanned_books: lib.books.len().min(days_left * lib.concurrency)
-                }
-            }).collect::<Vec<_>>()
+        let libs = order.iter().map(|&i| {
+            let lib = &libraries[i];
+            days_left -= lib.signup;
+            LibraryScanOrder {
+                id: i,
+                books: lib.books.clone(),
+                books_left: vec!(),
+                max_scanned_books: lib.books.len().min(days_left * lib.concurrency)
+            }
+        }).collect::<Vec<_>>();
+        Self::from_libs(libs)
+    }
+
+    fn from_libs(libs: Vec<LibraryScanOrder>) -> Self {
+        let mut libs_by_book_used = HashMap::<BookId, usize>::new();
+        let mut books_taken = HashSet::new();
+        for (pos, lib) in libs.iter().enumerate() {
+            for &book in &lib.books {
+                libs_by_book_used.insert(book, pos);
+                books_taken.insert(book);
+            }
+        }
+
+        Self {
+            libs,
+            libs_by_book_used,
+            books_taken
         }
     }
 }
@@ -152,15 +170,6 @@ fn swap_book(problem: &Problem, solution: &mut Solution, book: BookId, from: usi
 }
 
 fn optimize_solution(problem: &Problem, solution: &mut Solution) {
-    let mut libs_by_book_used = HashMap::<BookId, usize>::new();
-    let mut books_taken = HashSet::new();
-    for (pos, lib) in solution.libs.iter().enumerate() {
-        for &book in &lib.books {
-            libs_by_book_used.insert(book, pos);
-            books_taken.insert(book);
-        }
-    }
-
     while let Some((book_to_swap, current_lib_pos, lib_with_empty_slot_pos, book_to_take)) = solution
         .libs.par_iter().enumerate()
         .flat_map(|(lib_with_empty_slot_pos, lib_with_empty_slot)| {
@@ -171,11 +180,11 @@ fn optimize_solution(problem: &Problem, solution: &mut Solution) {
             };
             lib_with_empty_slot.books_left.iter()
                 .filter_map(|&book_to_swap| {
-                    libs_by_book_used.get(&book_to_swap)
+                    solution.libs_by_book_used.get(&book_to_swap)
                         .and_then(|&current_lib_pos| {
                             solution.libs[current_lib_pos].books_left.iter()
                                 // books are ordered by their score, so take first one
-                                .find(|book_to_take| !books_taken.contains(book_to_take))
+                                .find(|book_to_take| !solution.books_taken.contains(book_to_take))
                                 .filter(|book_to_take| problem.scores[book_to_take.0] > empty_slot_cost)
                                 .map(|&book_to_take| (book_to_swap, current_lib_pos, lib_with_empty_slot_pos, book_to_take))
                         })
@@ -188,17 +197,17 @@ fn optimize_solution(problem: &Problem, solution: &mut Solution) {
         if lib_with_empty_slot.max_scanned_books == lib_with_empty_slot.books.len() {
             let last_book = *lib_with_empty_slot.books.last().unwrap();
             swap_book_usage(problem, last_book, &mut lib_with_empty_slot.books, &mut lib_with_empty_slot.books_left);
-            libs_by_book_used.remove(&last_book);
-            books_taken.remove(&last_book);
+            solution.libs_by_book_used.remove(&last_book);
+            solution.books_taken.remove(&last_book);
         }
 
         swap_book(problem, solution, book_to_swap, current_lib_pos, lib_with_empty_slot_pos);
         let current_lib = &mut solution.libs[current_lib_pos];
-        libs_by_book_used.insert(book_to_swap, lib_with_empty_slot_pos);
+        solution.libs_by_book_used.insert(book_to_swap, lib_with_empty_slot_pos);
 
         swap_book_usage(problem, book_to_take, &mut current_lib.books_left, &mut current_lib.books);
-        libs_by_book_used.insert(book_to_take, current_lib_pos);
-        books_taken.insert(book_to_take);
+        solution.libs_by_book_used.insert(book_to_take, current_lib_pos);
+        solution.books_taken.insert(book_to_take);
         println!("Added {} score by using new book {:?}", problem.scores[book_to_take.0], book_to_take);
     }
 }
@@ -271,9 +280,7 @@ fn solve_greedy(problem: &Problem) -> Solution {
     }
 
     println!("Used {} books", used_books.len());
-    Solution {
-        libs: solution_part,
-    }
+    Solution::from_libs(solution_part)
 }
 
 fn main() {
